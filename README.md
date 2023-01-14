@@ -34,7 +34,7 @@ Az input formátuma a következő:
 
 A feladat nem más, mint az üres sorokkal elválasztott részeket összegezni, majd kiválasztani a maximálist.
 
-Az input beolvasása igen egyszerűen megy (load text file)  `0:`test01.txt`, majd mivel minden érték egy szám, sorokat konvertáljuk egyből egészekké is (Format)  _0$_. Ezzel csak az a baj, hogy ez az üres sorokkal nem tud mit kezdeni, s ezeknél hibát jelez (0N). Ez az ami pont jó lesz nekünk, ugyanis ezet tekintjük majd elválasztásnak. Annak érdekében, hogy az első sorunk is megmaradjon, az egész input elé berakunk még egy ilyen jelzést _0N,_ s a könnyebb hivatkozás érdekében ezt tároljuk egy változóban.
+Az input beolvasása igen egyszerűen megy (load text file)  `0:`test01.txt`, majd mivel minden érték egy szám, sorokat konvertáljuk egyből egészekké is (Format)  _0$_. Ezzel csak az a baj, hogy ez az üres sorokkal nem tud mit kezdeni, s ezeknél hibát jelez (0N). Ez az ami pont jó lesz nekünk, ugyanis ezeket tekintjük majd elválasztásnak. Annak érdekében, hogy az első sorunk is megmaradjon, az egész input elé berakunk még egy ilyen jelzést _0N,_ s a könnyebb hivatkozás érdekében ezt tároljuk egy változóban.
 
 ```kona
 b:0N,0$0:`test01.txt
@@ -205,7 +205,7 @@ A soron következő feladatnál azt a legelső pozíciót kell meghatározni, am
 mjqjpqmgbljsphdztnvjfqwrcgsmlb
 ```
 
-Az inputnak csak az első sorával kell dolgozni, ezért is használjuk a First-öt. Majd el kellene dönteni, hogy marker-rel van-e dolgunk. A függvényünknek egy paramétere van, hogy melyik karaktertől számoljuk a dolgokat. Első lépésben ennyit eldobunk (Drop), majd vesszük a négy soron következőt (Take), és a Range - más néven _uniq_ segítségével kiválogatjuk az egyedi karaktereket. Ha pont négyen vannak, akkor nincs ismétlődés. Vegyük az input hosszát, egy eddig növekvő számsorozatot, és ezek mindegyikére alkalmazzuk az előbbi függvényt. (Ha túl sokat vágunk le, akkor nem lesz elég hosszú a maradék, emiatt a függvény hamis értékkel tér vissza, ami nem baj). Megkeressük, hogy melyik indexnél van az első igaz érték, s hozzáadunk még négyet, mert az azt követő karakter a kérdéses.
+Az inputnak csak az első sorával kell dolgozni, ezért is használjuk a First-öt. Majd el kellene dönteni, hogy marker-rel van-e dolgunk. A függvényünknek egy paramétere van, hogy melyik karaktertől számoljuk a dolgokat. Első lépésben ennyit eldobunk (Drop), majd vesszük a négy soron következőt (Take), és a Range - más néven _uniq_ - segítségével kiválogatjuk az egyedi karaktereket. Ha pont négyen vannak, akkor nincs ismétlődés. Vegyük az input hosszát, egy eddig növekvő számsorozatot, és ezek mindegyikére alkalmazzuk az előbbi függvényt. (Ha túl sokat vágunk le, akkor nem lesz elég hosszú a maradék, emiatt a függvény hamis értékkel tér vissza, ami nem baj). Megkeressük, hogy melyik indexnél van az első igaz érték, s hozzáadunk még négyet, mert az azt követő karakter a kérdéses.
 
 ```kona
 a:*0:"input06.txt"
@@ -222,9 +222,190 @@ g:{14=#?14#x _ a}
 
 ## 7. No Space Left On Device
 
+```txt
+$ cd /
+$ ls
+dir a
+14848514 b.txt
+8504156 c.dat
+dir d
+$ cd a
+$ ls
+dir e
+29116 f
+2557 g
+62596 h.lst
+$ cd e
+$ ls
+584 i
+$ cd ..
+$ cd ..
+$ cd d
+$ ls
+4060174 j
+8033020 d.log
+5626152 d.ext
+7214296 k
+```
+
+A feladat inputja kellően szemét. Elég sok olyan sor van benne, mely csak zavart okoz, ezektől jó lenne megszabadulni. Másrészt szellemesen a könyvtárrendszer közepén fejezi be a sétát, ami a megoldást nem zavarja, de erre figyelemmel kell lenni a program megírásakor.
+
+Kezdjük azzal, beolvassuk az inputot az _a_ változóban, de egyből el is hagyjuk az input első sorát (Drop), mert arra nem lesz szükségünk. Az _fw_ függvény neve a _first word_ rövidítése, és az korábbiak szerint igen egyértelmű a definíciója. Mely sorokat hagyjuk el? Amely sor a _dir_ szóval kezdődik, az most nem hordoz a feladat megoldásához semmi információt, mert utána úgyis lesz egy rá vonatkozó _cd_. Hogyan akadunk rá ezekre a sorokra? Alkalmazzuk az _fw_ függvényt az input összes sorára (Each) - amivel megkapjuk a sorok első szavait, és ezt már csak össze kell hasonlítani a _dir_ szócskával (Match Each-left). Ezzel minden sorra kapunk egy igaz-hamis értéket - megválaszolva azt kérdést, hogy ezzel a szóval kezdődik-e a sor.
+
+Vannak további felesleges soraink, melyekkel körbenéznénk: `$ ls`. Mivel az input sztringek listája, ez pedig itt egy string a String match (`_sm`) szintén logikai értékek sorozatával tér vissza. A két bitsorozatnak venni kell a diszjunkcióját (Or), majd tagadni (Not), hogy pont ott kapjunk egyest, amely sort meg akarjuk őrizni. Ezek után egy korábban már látott trükkel (Where + At) már csak a valóban szükséges soraink maradtak meg.
+
+```kona
+a:1_0:"test07.txt"
+fw:{(x?" ")#x}
+b:a@&~(a _sm "$ ls")|(fw'a)~\:"dir"
+```
+
+Annak érdekében, hogy a gyökérkönyvtárban kössünk ki, össze kellene számolni, hogy hányszor lépünk befele, és hányszor kifele. Az utóbbi egyszerű: `cd ..`, viszont az előbbi kicsit komplikáltabb, ezért az összes `cd` parancs számát határozzuk meg, ami nem nehéz, mert csak ilyen parancsaink maradtak, azaz ha az első szó egy karakterből álló sztring - emiatt kell a vesszőt használni (Enlist) - ami pont a dollár prompt, akkor kész is vagyunk. A szerkezet hasonló a _dir_-nél látotthoz, csak miután itt darabszámra vagyunk kíváncsiak, összegezni kell a logikai értékeket (Add Over). A visszalépés is ugyanaz mint az előbb, s itt is összegezni kell. Ezzel a két darabszám a _c_ és _d_ változóba kerül. Már csak a sorok listáját kell megfelelő számú visszalépést tartalmazó sorral:
+
+```kona
+c:+/(fw'b)~\:,"$"
+d:+/b _sm "$ cd .."
+b:b,(c-2*d)#,"$ cd .."
+```
+
+A megoldásunkban újra a `xf/y` szerkezetet kívánjuk használni, ahol _x_ tartalmazza az aktuális állapotot, az _y_ pedig az input még fel nem dolgozott részét. Mire is van szükségünk? Mivel kijjebb és beljebb mozgunk a fájlszerkezetben, észben kell tartani, hogy a külső könyvtáraban már mekkora méretet számoltunk már össze, másrészt számolni kell, hogy a feladatban szereplő méret hol tart.
+
+A szóban forgó függvény a Scheme _cond_ feltételes szerkezetét követi. Az egyes feltételeket azok igaz ága követi, esetlegesen egy else ággal - arra az esetre ha egyik feltétel sem teljesül. Lássuk milyen esetekkel kell foglalkoznunk!
+
++ A sor egy visszalépést tartalmaz. Ha a feladatban megadott méretet nem éri el a listánk első eleme, akkor hozzá kell adnunk a pár második tagjához, egyébként nem. Viszont ennek az alkönyvtárnak a mérete hozzáadódik a tartalmazó könyvtár méretéhez, azaz az első számmal meg kell növelni a másodikat. A listánk - ami a páros első tagja - első elemére hivatkozhatunk a First-First-tel, a második elemére a `x@0@1` helyett az At-Over segítségével hivatkozunk. Újabb feltételes szerkezet használata helyett aritmetikai kifejezést használunk.
+
++ A második feltétel arról szól, hogy beljebb kerülünk a fájlrendszerben. Ekkor egy nullát szúrunk a listánk elejére.
+
++ Ha nem _cd_ parancs szerepel a sorban, akkor egy fájlról van szó, melynek a méretével meg kell növelni a lista első elemét
+
+A listánk egy nulla számból áll, míg a számláló megint nulla értékkel indul.  
+
+```kona
+f: {:[y~"$ cd ..";(((**x)+(x@/0 1)),2_*x;(x[1] + (**x)*(100001>**x)));(fw@y)~,"$";(0,*x;x[1]);(((0$y)+**x),1 _ *x;x[1])]}
+(,0;0) f/ b
+```
+
+A második feladatnál azt a könyvtárat kell megtalálni, mellyel épp megfelelő méretű helyet tudunk felszabadítani. Most nem kell növelni a számlálót, hanem feljegyezni minden egyes könyvtár méretét. Ezzel csak az első eset kódja módosult, illetve az, hogy az induló paraméterünk második tagja egy üres lista. Eredményül egy teljes elfoglalt terület és a könyvtárak méreteinek listáját kapjuk meg. Ezt a páros az _e_ változóban mentjük el. Az _l_ a felszabadítantó terület méretét tartalmazza. Ezért tekintjük mindazokat a méreteket, melyek az _l_-nél nagyobbat, majd tekintjük ezek minimumát, s ezzel kész is vagyunk.
+
+```kona
+g: {:[y~"$ cd ..";(((**x)+(x@/0 1)),2_*x;(**x),x[1]);(fw@y)~,"$";(0,*x;x[1]);(((0$y)+**x),1 _ *x;x[1])]}
+e: (,0;()) g/ b
+l: 30000000-(70000000-**e)
+&/(e[1][&e[1] >' l])
+```
+
 ## 8. Treetop Tree House
 
+Ez a feladat kifejezetten kedvez a vektor-nyelveknek, szinte egyértelmű a megoldása. A feladat arról szól - hasonlóan a [skyscraper](https://www.brainbashers.com/skyscrapers.asp) rejtvényhez - hogy hány fa látható a négy égtáj valamelyikéből. Ehhez az kell, hogy magasabb legyen, mint az előtte álló házak. Az input az egyes fák magasságát adja meg egy-egy karakterrel.
+
+```txt
+30373
+25512
+65332
+33549
+35390
+```
+
+Az karakter-egész átalakítást a `_ic` függvény oldja meg, s jól nevelt vektor-nyelvre jellemzően egyből átadhatjuk a teljes inputot, az összes sor minden karaktere konvertálódik egy egésszé. Lusta módon az így kapott ASCII kódokkal is dolgozhatnánk tovább, de jobb kisebb számokra alakítani ezeket. Udvarias lenne 48-at levonni, hogy egyezen a feladatben látott számjegy, meg a belőle származó szám, de van egy szerencsés mellékhatása, ha ezt egy kisebb számmal helyettesítjük, mert így minden kerethez tartozó érték láthatónak minősül. Azon lehetne vitatkozni, hogy a _0_ magasságú fa látható-e vagy sem, de a feladat kitűzője szerint igen, akkor fogadjuk el. A mátrixunk az _m_ nevet kapta, és _s_ jelöli a méretét. Szerencsére négyzetes a feladat, így egy méret elég mindkét irányba.
+
+A megoldás egy trükkön múlik, az _f_ függvényen. Ez két paramétert használ, az `x` egészet, és az `y` mátrixot. Leválasztjuk a mátrix első x sorát (Take), majd oszloponként maximumot számolunk (Max Over), az eredményt összehasonlítjuk a soron következő x+1-dik sorral, s ahol az nagyobb, ott van egy látható fa. A mátrixot rögitjük (parciális függvényt definiálunk), és a leválasztható sorok összes lehetőségére végrehajtjuk ezt a parciális függvényt. Ahogy két vektor összehasonlítása egy bitvektort ad, ezek egymásutánja egy bitmátrixot, ahol ott áll egyes, ahol látható fa van. Az, hogy a legkisebb fa nálunk legalább 1, az első sorra konstans igazat ad.
+
+Ezek után nincs más dolgunk, mint a mátrixunkat megfelelő módon tükrözni, s megkapjuk mind a négy irányt: ha nincs transzformáció, akkor az az északi irány (_a_); ha vizszintesen tükrözzük (Reverse), az a déli irány (_b_), ha transzponáljuk mátrixot (Flip) az a nyugati irány (_c_),  ha pedig előbb trükközzük, majd transzponáljuk, a keleti irányt adja (_d_). Itt vigyázni kell az eredmény visszaalakításával, hogy jó sorrendben történjen!
+
+Ezek után nincs más dolgunk, mint venni a bitmátrixok diszjunkcióját (Or), majd összegezni az egészet (duplán Add Over).
+
+```kona
+ m: (_ic 0:"test08.txt")-47
+ s:#m
+ f:{(|/x#y)<y[x]}
+ a:f[;m]'!s
+ b:|f[;|m]'!s
+ c:+f[;+m]'!s
+ d:+|f[;|+m]'!s
+ +/(+/a|b|c|d)
+ ```
+
+A feladat második részében az a lényegi kérdés, hogy egy-egy irányba meddig láthatunk el. Az adott fánál alacsonyabb fákat mindenképpen látjuk, viszont az azonos magasságú vagy még magasabb fák mögé már nem látunk.
+Ha adott az aktuális fa magassága (_a_), valamint adott irányban álló fák magasságai (_b_), akkor az `b<a` egy bitsorozatot ad vissza, s ebben az első hamis érték (0) jelöli azt a fát amit még látunk, de mögé már nem.
+A Find megadja ennek az indexét, de mivel az indexelés nullával kezdődik, ezt még eggyel növelnünk kell.
+Ha ez a nullás nem létezik, akkor rossz értéket kapnánk, ezért bevetünk egy minimumot (Min), melynek a másik argumentuma a _b_ hossza (Count).
+Az _a_ és _b_ meghatározásához ki kell indulnunk egy a mátrix egy sorából, ez lesz a függvény _y_ argumentuma, és a sor egy elemének indexéből (_x_). Az At és Drop használatával elérjük, hogy az index által jelölt elem, valamint a mögötte álló számokat veszik fel a lokális változóink.
+A _g_ függvénynek egy indexet és egy sort kell átadni, de az indexnél felsoroljuk az összes lehetőséget (Enumerate Each), majd mindezt egy külső függvénynek tekintve átadjuk a mátrix összes sorát (Each). Ezzel a végeredmény  (_e1_) egy mátrix melynek elemeit a keleti irányba látható fák számai alkotják. Annak érdekében, hogy ugyanezt megkapjuk a nyugati irányra (_e2_), a mátrix sorait kell egyenként megfordítani (Reverse monadic Each). A Reverse-t direkt alkalmazva mátrixra vízszintesen tükrözzük a mátrixot, nem pedig függőlegesen. A transzponálás újra használható, ekkor a déli irányt kapjuk meg (_e3_). Az északi irányhoz a transzponálást és a tükrözést kell kombinálni (_e4_).
+Végül a feladat nem kér mást, mint az egyes irányokhoz tartozó számok szorzatának a maximumát. Ehhez nincs másra szükségünk, mint a négy mátrix elemenkénti szorzatára (ami véletlenül sem mátrixszorzat), s két Max-Over segítségével mindkét irányban helyettesítjük a sort/oszlopot a maximális elemével.
+
+```kona
+ g:{a:y@x;b:(x+1) _ y; (#b)&1+(a>b)?0}
+ e1:{g[;x]' (!s)}' m
+ e2:|:'{g[;x]' (!s)}' |:'m
+ e3:+{g[;x]' (!s)}' +m
+ e4:+|:'{g[;x]' (!s)}' |:'+m
+ |/|/e1*e2*e3*e4
+```
+
 ## 9. Rope Bridge
+
+A feladatban egy kötélke mozgását kell követni. Az input a kötél elejének a mozgását írja le. A kötél vége kis késlekedéssel követi az elejét, és az kérdés, hogy hány pozíciót látogatott meg a kötél vége.
+
+```txt
+R 4
+U 4
+L 3
+D 1
+R 4
+D 1
+L 5
+R 2
+```
+
+A feladat megoldása során jellemzően a már használt műveleteket alkazzuk. Az _i_ és az _n_ a teszt és valódi inputot tartalmazza.
+Ahogy fentebb is látható: elől szerepel egy irányt jelző betű, amit egy szám követ. Jó órás debuggolást igényelt, az a tény, hogy ez a szám nem csak egy számjegyből állhat, bár a teszt ilyet nem tartalmaz.
+A beolvasáshoz készítünk egy segédfüggvényt, amit nem látunk el névvel, csak egyszerűen felhasználjuk. Ennek az input egy sora lesz az argumentuma, ebből kell a kezdő karaktert kinyerni (First) majd egy szimbólummá kovertálni (Dollar Backtick), az első két karaktert eldobni (Drop), hogy megkapjuk a számot tartalmazó sztringet, ezt számmá konvertálni (Dollar Int), és alkalmazni a szimbólumra Take műveletet, hogy elegendő számban megismételjük. Miután minden betűt kellő számban megismételtünk, jöhet a Join Over, hogy egy listába szervezzük a sok apró listát.
+
+Az _s_ az előjel függvényt jelöli, az itt látható függvény más nyelveken is közkedvelt megvalósítás.
+
+A kötél vége akkor mozog, ha nem szomszédos az elejével. Egy-egy pozíciót két számmal jelölünk, így a _c_ függvénynek négy argumentuma lesz. Ha az eltérés bármely irányban túllépi az egyet - a függvény igaz értéket ad vissza - , akkor már nem érnek össze, s ekkor kell mozdítani a kötél végét. A _d_ függvény megadja az kötél végének valamely irányú koordinátáját, az argumentumai pedig a kötél elejének és végének ugyanezen irányú koordinátái. Az _f_ és _g_ két függény, mely a kötél eleje és vége pozíciójához megadja a végének frissített pozícióit, akár mozog, akár nem. Az _a_ és _b_ két dictionary, s miattuk kell szimbólumokat használni, mert le vagyunk korlátozva ilyen kulcsok használatára.
+
+A _h_ függvény a kötél egy állapotát várja (a négy számmal leírt két pozíciót), illetve egy irányt jelző szimbólumot. Majd ebből előállít egy újabb állapotot. Már korábban is alkalmaztuk a trükköt, mikor a függvény-Over segítségével folyamatosan frissítjük az állapotot, s közben feldolgozzuk a lista minden elemét. Itt nem az kérdés, hogy végül hova kerül végül a kötél, ezért a függvény-Scan variánst alkalmazzuk, mint valamilyen _trace_ parancs a nyolcvanas évekből. Viszont nincs szükségünk minden így megkapott adatra, csak a kötél végének pozíciójára. A _j_ függvényt ezt válogatja ki, sőt a Z80 processzornál látott binary-coded-decimal trükköt alkalmazzuk, a számpárból egy számot készítünk. Mi haszna van ennek? Sajnos a nyelvben nincs halmaz adattípus. Viszont van egy Range művelet, mely kiválogatja a lista egyedi elemeit, s nem marad nekünk más hátra, mint megszámolni, hányas is vannak (Count).
+
+```kona
+i:,/{(0$(2 _ x))#`$*x}'(0:"test09.txt")
+n:,/{(0$(2 _ x))#`$*x}'(0:"input09.txt")
+s:{(x>0)-(x<0)}
+c:{[x;y;u;v]1<(_abs x-u)|_abs y-v}
+d:{x+s[y-x]}
+f:{[x;y;u;v] :[c[x;y;u;v];d[u;x];u]}
+g:{[x;y;u;v] :[c[x;y;u;v];d[v;y];v]}
+a: .((`R;1);(`L;-1);(`U;0);(`D,0))
+b: .((`R;0);(`L;0);(`U;1);(`D,-1))
+h: {p:(a@y)+*x; q:(b@y)+x@1; r:x@2; t:x@3; (p;q;f[p;q;r;t];g[p;q;r;t])}
+j:{(x@3)+1000*x@2}
+#?j' (0;0;0;0) h\ i
+```
+
+A feladat második részében hosszabb kötet kell szimulálni, amely 10 olyan darabból áll, melyek mindegyike úgy viselkedik, mint a korábbi kötelecske. Az előbb négy változót használtunk az állapot leírására, ugyanígy dolgozva most 20 változóra lenne szükségünk, tehát jobb, ha átírjuk a korábbi programot, és az egyes koordináták helyett pozíciókat jelölnek a változóink. Az _i_, _s_, _a_ és _b_ definíciója nem változott. A _c_, _d_ és _j_ szerepe ugyanaz, viszont a definíciója más.
+A _c_-nek csak két argumentuma van - két pozíció, így ki kell nyerni az egyes koordinátákat, hogy kiszámolhassuk az eltérésüket. Ugyanez a helyzet a _d_ esetén is. Az _e_ függvény is két koordinátát vár - két egymást követő kötéldarabét -, s hátrább lévő pozícióját frissíti. A korábbi _h_ szerepét most az _m_ veszi át, ezzel tudjuk a kötél kezdetét az előírt iránynak megfelően elmozdítani.
+
+A _p_ függvény egy teljes kötelet (pozíciósorozatot) vár, valamint egy irányt. A fejet ennek megfelelően elmozdítja (_q_),
+majd a kötél hátralevő részére ettől a fejtől elindítva végrehajtja a frissítést. Az előbb látott `x f\ y` szerkezetet használjuk erre, ahol `x`-nek a kötél `y`-nak az irány felel meg. A Scan Dyad miatt a teljes kötelet kapjuk eredményül.
+Emiatt ha eggyel kijjebb újra ezt a szerkezetet használjuk, immár a kiinduló kötéllel, és a mozgássorozattal, akkor minden közbenső állapotot visszakapunk. A _j_ korábban a második - egyben utolsó - pozíciót kódolta. Hosszabb kötél esetén ez nem esik egybe, így érdemes a last (Reverse - First) függvényt felhasználni, s egy számmá kódolni a pozíciót. Ezután a korábban látott módszerrel összeszámoljuk az egyedi pozíciók számát.
+
+```kona
+i:,/{(0$(2 _ x))#`$*x}'(0:"test09.txt")
+s:{(x>0)-(x<0)}
+a: .((`R;1);(`L;-1);(`U;0);(`D,0))
+b: .((`R;0);(`L;0);(`U;1);(`D,-1))
+
+c:{1<(_abs x[0]-*y)|_abs x[1]-y[1]}
+d:{(y[0]+s[x[0]-*y];y[1]+s[x[1]-y@1])}
+e:{ :[c[x;y];d[x;y];y]}
+m:{(a[y]+*x; b[y]+x[1])}
+p:{q:m[*x;y]; r:q e\ (1 _ x); r}
+j:{k:*|x; k[1]+1000*k[0]}
+#?j'( ((0;0);(0;0)) p\ i)
+#?j'(((0;0);(0;0);(0;0);(0;0);(0;0);(0;0);(0;0);(0;0);(0;0);(0;0)) p\ n)
+```
+
+Az utolsó két sorból sejthető, hogy ez a kód megfelelő lesz a feladat mindkét részfeladatának megoldására, csak a kötelet másképp kell kódolni a két esetben.
 
 ## 10. Cathode-Ray Tube
 
