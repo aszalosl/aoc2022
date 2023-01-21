@@ -1,6 +1,8 @@
 
 # Advent of Code 2022 in Kona (in Hungarian)
 
+## Bevezetés
+
 Az elmúlt években már  többször próbálkoztam az [Advent of Code](https://adventofcode.com) teljesítésével. A decemberi időszak valóban a lecsendesülés időszaka lehetne, ha nem ekkor lennének a ZHk, pótZHk, beadandók, első vizsgák. S ez nem csak a diákok, hanem a tanárjaik számára is kihívást jelent, hisz illene mindent időre átolvasni, kijavítani. Ennek ellenére 2018-ban sikerült Python-ban, majd 2021-ben Scala-ban teljesíteni a kihívást, igaz másodjára csak pár hetes késéssel. 18-ban a Python mellett próbáltam Racket-ben is megoldani a feladatokat, hogy alaposabban megismerjek egy funkcionális nyelvet, de valójában ez csak 21-ben jött össze a Scala-val. Több évig ott mocorgott bennem, hogy illene egy vektor alapú nyelvet is elsajátítani. Elég sokat töprengtem azon, hogy az [APL](https://aplwiki.com), a [J](https://code.jsoftware.com/wiki/Main_Page), a [K](https://k.miraheze.org/wiki/Main_Page) és a [Q](https://code.kx.com/q/learn/) közül melyikkel lenne érdemes próbálkozni; végül az egyszerűsége miatt nálam a K győzött. Persze ez azt is jelenti, hogy pár esetben majd körülményesebben lehet ugyanazt megfogalmazni, mint más nyelveken lehetne, de ha már eddig is zsákbafutásról volt szó, akkor még egy megszorítás már nem sokat ad hozzá.
 
 Még a nyolcvanas években hozzászoktam a programozási nyelvek nyelvjárásaihoz, a legjellemzőbb a ZX Spectrum és Commodore C64 BASIC-je közti eltérés volt, mert szinte minden egyes programsort át kellett írni, hogy működjön. Aztán a szabványosabbnak tekinthető eszközökkel és programnyelvekkel ez szinte eltűnt, a Turbo Pascal, a C, a Java szabványos, egységes volt, az egyik helyen megírt program minden módosítás nélkül futott a másik gépen is. A visszafele kompatibilitás elvárt tulajdonság szinte mindenütt, van is belőle nagy galiba, ha nem teljesül - lásd a Python 2-3 váltást -, de az sem túlságosan jó, ha ez fékezi az adott nyelvet, mint például a Java esetén.
@@ -409,9 +411,218 @@ Az utolsó két sorból sejthető, hogy ez a kód megfelelő lesz a feladat mind
 
 ## 10. Cathode-Ray Tube
 
+A soron következő feladat egy egyszerű szimuláció. Két fajta sor szerepel az inputban, a NOP, illetve egy regiszter módosító utasítás. Az a nehezítés, hogy az előbbi egy ciklus, míg az utóbbi két ciklus alatt hajtódik végre, valamint a regiszter értéke csak az utasítás végrehajtása után módosul, míg a kérdés a ciklus közbeni regiszterértékre kíváncsi.
+
+```txt
+noop
+addx 3
+addx -5
+```
+
+Épp ezért az állapotunk egy páros lesz, első eleme a regiszter új értéke, míg a másik fele a végrehajtás alatti érték vagy értékek. Az _f_ függvény argumentumai az állapot és a soron következő sor tartalma lesz. Ebből elég az első betűt figyelni, mert ha az _n_, akkor egy ciklussal kell számolni, és a regiszter értéke nem módosul, azaz a kezdeti értéket kell továbbadni duplán. Ha viszont a regiszter értéke módosul, akkor ki kell vadászni a számot a mnemonik mögül. Akár az is megfelelő lett volna, hogy ekkor az input első öt karakterét eldobjuk, de elsőre kényelmesebb volt a szóközig terjedő rész kukázni, és a maradékot számmá alakítani. Természtesen már megint a `xf\y` szerkezetet használtam, mellyel az állapotváltozásokkal haladva fel tudjuk dolgozni a teljes inputot. Viszont nem lesz szükségünk mindarra, amit kiszámoltunk, az párosaink első tagját eldobhatjuk. Ha valaki figyelmes, akkor látja, hogy bekerült egy felesleges nulladik állapot, de ez pont segít a feladat megoldásában. A regiszter értékének történetét az _a_ listában mentettük el. A kérdésben feltett arithmetikai sorozatot nem nehéz előállítani az Enumerate és szorzás meg összeadás segítségével, és helyben definiált függvénnyel az index és érték szorzatokat könnyedén kiszámíthatjuk, míg az Add-Over pedig gondoskodik a szummázásról.
+
+```kona
+i:0:"test10a.txt"
+f:{:["n"=*y;(*x;*x);((*x)+0$((1+y?" ") _ y); (*x;*x) ) ]}
+a:,/{x[1]}'(1;1) f\ i
++/{x*a[x]} 20+40*!6
+```
+
+A feladat második részének a szövege igencsak el lett bonyolítva. Valójában az a kérdés, hogy mikor kerül közel a regiszter értéke egy folyamatosan változó értékhez (elektronsugár helyzete). Ez utóbbit könnyű generálni az Enumerate majd a Mod segítségével. Venni kell az eltérést az _a_ változóban tárolt értékektől, amit a Minus és abszolút érték számítással oldunk meg. A feladatban emlegetett három távolságnak, a -1, 0 és 1 felel meg, tehát csak azok melyeknél kettőnél kisebb értéket kapunk az eltérésre. A megoldás ebben az esetben egy kép, tehát a logikai értéknek megfelelő karakterét válasszuk a stringnek (At), majd az előbb látott módon generáljuk azokat a pontokat, ahol a karaktersorozatunkat szétvagdaljuk.
+
+```kona
+(40*!6) _ ".#"@ 2 > _abs (1 _ a) - (!240)!40
+```
+
+Nincs más dolgunk, mint hunyorogva kiolvasni a betűket.
+
+```txt
+("####.#..#...##.####.###....##.####.####."
+ "...#.#.#.....#.#....#..#....#.#.......#."
+ "..#..##......#.###..###.....#.###....#.."
+ ".#...#.#.....#.#....#..#....#.#.....#..."
+ "#....#.#..#..#.#....#..#.#..#.#....#...."
+ "####.#..#..##..#....###...##..#....####.")
+```
+
 ## 11. Monkey in the Middle
 
+### Felütés
+
+Ez a feladat számomra az eddigiek közül a legszemetebbnek tűnik, bár tudom, hogy még nem tartunk a felénél. Nem igazán K kompatibilis, ezért félrelibbentem a függönyt a feladat megoldásánák menetéről, és nem csak egy letisztázott megoldást mutatok be. A feladat inputjában egy pszeudokód szerepel, amit ha nagyon illedelmesek vagyunk, a programunkkal kellene értelmezni. Ezt a lépést hátrább rakom a teendők listájában, és a maradékra összpontosítok. Annak érdekében, hogy a pszeudókódokat értelmezni lehessen felhasználom az Eval műveletet, mely egy sztringben szereplő kódot futtat le - ezért is érdemes interpretert használni -, és minden majomhoz megadok egy-egy ilyen sztringet, melyek a _p_ változóban kapnak helyet. A lista minden eleméből egy függvény generálódik majd, ami megfelel annak, amit a feladat szövege leír, így lehet most a számolásra összpontosítani.
+
+```kona
+p: ("{w:(x*19)%3; :[w!23;(3;w);(2;w)]}"; "{w:(x+6)%3; :[w!19;(0;w);(2;w)]}"; "{w:(x*x)%3; :[w!13;(3;w);(1;w)]}"; "{w:(x+3)%3; :[w!17;(1;w);(0;w)]}")
+```
+
+### Számolgatunk
+
+Mi a feladatunk egy állapota? Tudnunk kell, hogy mely tárgy mely majomnál van, illetve az adott tárgyhoz milyen szintű aggodalom járul. Ezzel a szinttel azonosítuk is ezt a tárgyat, mert más információra nincs szükségünk. Azaz egy-egy tárgyhoz egy páros tartozik, melynek első tagja legyen a majom sorszáma. A összes tárgyat így párok egy listája írja le. Mely majomhoz kerül legközelebb egy tárgy? Ehhez le kell futtatni a majomhoz tartozó programot - azaz az index a majom sorszáma, a pár első tagja lesz, míg egyetlen paramétere az aggodalom szintje, azaz a pár második tagja. Ezt az _f_ függvény írja le.
+
+Sokkal egyszerűbb lett volna, ha a majmok nem a rangsor szerint dolgoznának - szigorúan egymás után -, hanem párhuzamosan. De mivel ez a feladat, előbb válogassuk ki a listából, hogy mely tárgyak vannak az _i._-dik majomnál. A sorszám lesz az `x` argumentum, maga a lista egy-egy tagja - azaz egy pár - pedig az `y` argumentum. Ha a pár első tagja egyezik a sorszámmal, akkor azzal most dolgoznunk kell. Az _a_ változó egy bitlistát tartalmaz, ahol az igaz jelöli az izgalmas párokat, amelyeket hamarosan feldolgozunk. Az _a_-hoz tartozó kódrészlet kapcsos zárójelén kívül újabb előfordulása van az `x`-nek és `y`-nak, amelyek már mást jelentenek, mint belül. Egy parciális függvényt alkottunk meg, melynek az _i._-dik sorszámát a mostani `y` szolgáltatja, míg az `x` a teljes listát jelöli. Az Each miatt páronként használja fel az előbbi parcinális függvényt. A _b_ változóba már az kerül, hogy mely majomhoz kerültek és aggodalmi szinten az _i_-dik majom által megvizsgált tárgyak, ehhez a Where + At segítségével kiválasztottuk a párokat, és mindre (Each) végrehajtottuk az _f_ függvényt.
+
+Természetesen szükség van a többi majomnál lévő tárgyakra is. Ehhez az _a_ vektort negáljuk (Negate), majd ismét jön a Where-At páros, és a kiválogatott párok a _c_ változóba kerülnek. A függvény visszatérési értéke a _b_ és _c_ "uniója" lesz (Join). Ezzel kész is a _g_ függvény.
+Ha az _i_ tárolja a párok listáját, és 4 majomról van szó összesen - ahogy a feladatismertetőben, akkor a   `i g/0 1 2 3` leír egy majom-fordulót.
+Miután a feladat kérdése, hogy melyik majom hány tárgyat vizsgált meg, nem csak az egyes fordulók végeredményére vagyunk kíváncsiak, hanem a teljes folyamatra.
+
+Ezért a tesztben szereplő feladat esetén 20 fordulóra lenne szükség, ami _g_ nyolcvan futását igényli. Ám miután nem a végeredmény - mely majomnál mi található a folyamat végén - érdekel minket, elég lesz ennél eggyel kevesebb is, viszont az Over helyett Scan-t kell használni, hogy a közbenső értékekhez is hozzáférjünk. Azt, hogy körbe-körbe megy a szerep a majmok között, az előző feladat megoldásánál látható Enumerate-Mod párossal érjük el, s a párok listájának listáját a _t_ változóba mentjük. A feladat megválaszolásához arra van szükség, hogy adott majom hány tárggyal foglalkozott a folyamat során. Tehát a párok első tagját kell kinyerni. Ezt az Each dupla alkalmazásával érjük el, illetve egy függvénnyel, mely a First-öt használja. Ennek erdményeképpen kapunk egy szép mátrixot. Arra vagyunk kíváncsiak, hogy az első sorában hány nullás, a második sorában hány egyes szerepel, és így szépen tovább. Ehhez készítünk egy vektort, melyben sorra ezek a számok szerepelnek - újfent az Enumerate-Mod párossal -, s jöhet az egyenlőség, persze soronként (Each). Ezzel az egy érték egy lista egyenlőségénél a lista minden elemét összehasonlítja a megadott elemmel, s kapunk egy bitsorozatot. Azt, hogy hány igaz/egyes szerepel a sorban, annak összegzésével tudjuk meg: Add Over Each. Nincs más dolgunk mint minden negyedik értéket összeadni, mert így követik egymást az ugyanahhoz a majomhoz tartozó értékek. Ez kicsit komplikált, ezért trükközünk egy kicsit, a vektorból egy mátrixot készítünk a Reshape segítségével. Ha valamelyik méretet _-1_-nek választjuk, akkor az automatikusan beállítódik. Így elég azt megadni, hogy a mátrixnak legyen 20 sora, utána összegezzük az egymáshoz tartozó - egy oszlopban szereplő számokat - megszokott módon. Ennek eredménye kerül az _u_ változóba.
+
+Nics más dolgunk, mint összeszorozni a két legnagyobb értéket, ehhez sorbarendezzük a számokat (Grade Down+At), majd vesszük a két elsőt ebből a rendezett listából, és vesszük a szorzatukat.
+
+```kona
+m:4
+f:{ (. p[*x]) x[1]}
+i:(0 79;0 98; 1 54; 1 65; 1 75; 1 74; 2 79; 2 60; 2 97; 3 74)
+g:{a:{x=*y}[y;]'x; b:f'x@&a; c:x@&~a; b,c}
+t: i g\((!-1+m*20)!m)
+u:+/(20;-1)#+/'({*x}''t) =' ((!m*20)!m)
+*/2#u@>u
+```
+
+### Az input értelmezése
+
+Most már foglalkozhatunk a pszeudokódok feldolgozásával is! Egy-egy majomra vonatkozó kód a következőképpen néz ki:
+
+```txt
+Monkey 0:
+  Starting items: 79, 98
+  Operation: new = old * 19
+  Test: divisible by 23
+    If true: throw to monkey 2
+    If false: throw to monkey 3
+
+```
+
+Az input több hasonlót tartalmaz, melyek egy-egy üres sorral vannak elválasztva. Egyszerűbb dolgunk lesz, ha az inputot ezek alapján feldaraboljuk. Az üres sort is beleszámítva 7 sorból áll egy ilyen rész, tehát vesszük a hét többszöröseit a teljes input hosszáig, és ezeknél szétszabdaljuk az inputot (Cut), s ennek eredménye lesz a _d_. Szükségünk volt a tárgyak listájára. Ezt a _j_ függvény segítségével alkotjuk meg. A _k_ változóba kigyűjtjük a majom azonosítóját, amihez szüksége lesz az első sor hosszára, ebből kettőt levonunk - egyet az indexelés kezdete, egyet meg a sorzáró kettőspont miatt -, majd az ezen a pozíción álló számjegyet számmá alakítjuk. A második sorban kettőspontot követően vannak a számok, ezért megkeressük a kettőspont helyét, majd ennél kettővel több karaktert eldobunk a sztring elejéről. A számunkra fontos számok a már vesszővel elválasztva szerepelnek, ami most nem zavaró, s trükkösen újra az Eval-ra hivatkozunk, ez automatikus számlistát generál. Már csak a párokat kell kialakítani, melyhez a Join Each-right kombinációt alkalmazzuk, ha az _l_ valódi listát tartalmaz. Abban a speciális esetben, ha csak egy érték szerepel itt (Atom), akkor az Enlist-et is használni kell, hogy megfelelő szerkezetet kapjunk. Végül a Join-Over Each adja meg a várt párok listáját: `,/j'd`.
+
+```kona
+d:(7*!(1+(#c)%7)) _ c:0:"test11.txt"
+j:{k: 0$x[0]@-2+#*x; l:.(2+x[1]?":") _ x[1]; :[@l;,(k;l); k,/:l]}
+i:,/j'd
+m:#d
+```
+
+Meg kellene alkotnunk az egyes majmok programját. Szerencsére a szerkezet igen egyszerű, a harmadik sor egy képlettel ér véget, a negyediktől a hatodik pedig egy-egy számmal. A három utolsó sor feldolgozásához bevezetünk egy új függvényt: _e_, amely a második argumentumként megadott sztringből csak az elsőként megadott szám hosszúságú szuffixét hagyja meg. Mehetne mindez a sztring hossza szerinti játszadozással és a Drop segítségével, de a Reverse-Take-Reverse rövidebben leírható, mert csak megfordítjuk a sztringet, leválasztjuk a kellő számú karaktert most már az elejéről, s visszafordítjuk, hogy nagyobb számok esetén is helyes legyen.
+
+A képletben a régi értéket az `old` testesíti meg, ezért egy olyan sztringet rakunk össze, mely egy olyan függvényt generál, melynek a változója pont ez, így például egy ilyen sztring lehet a következő: `{[old]w:(old * 19)%3; :[w! 7;(3;w);(2;w)]}`. Így semmi dolgunk nincs a képlettel, egy az egyben bemásolhatjuk, csak le kell választani a harmadik sorban az egyenlőségjel mögötti részt. Kicsit pontosabban célzunk, nem hagyjuk meg a kezdő szóközöt sem. A következő három sor megfelelő záró karaktereit pedig a megfelelelő helyekre rakjuk be. Fontos figyelni arra, hogy ezeket sztingként kezeljük, ezért nem csináltunk belőlük számokat. Ezek után peding nincs más dolgunk, mint a _d_ összes elemére alkalmazzuk ezt a függvényt.
+
+```kona
+e:{|x#|y}
+q:{"{[old]w:(", ((2+x[2]?"=") _ x[2]), ")%3; :[w!", e[2;x[3]], ";(", e[1;x[5]], ";w);(", e[1;x[4]], ";w)]}" }
+p:q'd
+```
+
+### Második rész
+
+A lényegi változás, hogy
+
++ a húsz kör helyett tízezerrel kell dolgoznunk; ezért jó, hogy nem négyzetes vagy exponenciális bonyolúltságú megoldásunk van,
++ a hárommal történő osztás elmarad; emiatt egyre nagyobb számokkal dolgozunk, melyek azért a több ezernyi lépésben csak túllépnek a programnyelv ábrázolási tartományán.
+
+Matematikusként könnyű dolgom van, a majmok programjaiban lévő tesztek különböző prímszámokat használnak, így ha számokat helyettesítjük e prímek szorzata szerint vett maradékkal, akkor nem lépünk túl az egészek értelmezési tartományán. A tesztfeladat eset `*/23 19 13 17` azaz `96577` a szorzat; míg élesben ugyanez már `*/7 19 5 11 17 13 2 3` azaz `9699690` lesz. Ezt a szorzatot berakjuk az _a_ változóba. Az lenne a szép, ha most erre is írnék egy függvényt, de a korábbi kódrészletek alapján úgy gondolom, hogy már mindenki ki tudja nyerni a negyedik sor végén található számot szám formájában is, onnan meg egyértelmű a függvény elkészítése, elemenkénti alkalmazása _d_-re, s a szorzat alkalmazása. Emiatt nézzük, mi mindennek kell változni a korábbi programban!
+
++ A hárommal való osztást az _a_ szerinti maradékkal kell kicserélni a _q_ függvényben,
++ bevezetünk egy `r` konstanst, ami a körök számát jelöli, ezzel lehet a megadott értékekhez hasonlítani a saját megoldásunkat, és a korábbi `20` számot mindenütt - azaz a _t_, az _u_ és a _v_ definíciójában - lecseréljük erre, azaz `r`-re.
+
+```kona
+q:{"{[old]w:(", ((2+x[2]?"=") _ x[2]), ")!a; :[w!", e[2;x[3]], ";(", e[1;x[5]], ";w);(", e[1;x[4]], ";w)]}" }
+p:q'd
+r:10000
+t: i g\((!-1+m*r)!m)
+v:(+/'({*x}''t) =' ((!m*r)!m))
+u:+/(r;m)#v
+```
+
+Hasonlóan kell eljárni, mint korábban, természetesen ha ötszázszor több sorunk van, akkor negyedmilliószor nagyobb számot várhatunk megoldásként mint az előtt. Szerencsére ezt a 11 jegyű számot a K automatikusan kezeli, nem kell BigInt-re átírni a programunkat.
+
 ## 12. Hill Climbing Algorithm
+
+A soron következő feladatban a legrövidebb utat kell megtalálni. Valamilyen formában a [Dijkstra algoritmus](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) minden évben előfordul.
+Miután a hivatalos megvalósítás [kupacot](https://en.wikipedia.org/wiki/Heap_(data_structure)) használ, ezt inkább hanyagolom,
+ahogy a szélességi keresést is, amely pedig a [sor](https://en.wikipedia.org/wiki/Queue_(abstract_data_type)) használatára épít.
+Azért megoldásom nyomokban tartalmazza a [szélességi keresést](https://en.wikipedia.org/wiki/Breadth-first_search), ám nem épít keresőfát, hanem egy mátrixszal helyettesíti,
+amivel ugyan elveszítjük annak lehetőségét, hogy megadjuk a pontos utat, de ezt nem is várja el a feladat.
+Már az eredeti térkép is egy mátrix formájában kapható meg, így egy hasonló mátrixot készítünk, melyben az egyes pontokhoz a hozzájuk tartozó mélységi számokat tároljuk.
+Az inputban egyes betűk az adott pont magasságát jelölik, így `a` jelöli a legalacsonyabb, a `z` a legmagasabb pontot.
+Mivel `a` és `z` nem csak egyszer szerepelhet, egy `S` és `E` betű jelöli a start és a cél helyét.
+
+```txt
+Sabqponm
+abcryxxl
+accszExk
+acctuvwj
+abdefghi
+```
+
+Ez a két nagybetű bekavar a beolvasásba, így bevezetünk egy _f_ függvényt, ami a kisbetűket és és ezt a két nagybetűt is magassággá alakítja, felhasználva a betűkhöz tartozó ASCII kódokat.
+Miután az input sztringek - azaz karakterlisták - listája, ezért dupla Each segítségével tudunk feldolgozni külön-külön minden karaktert.
+Viszont szükségünk van a két nagybetű helyére, ehhez szintén egy függvényt készítünk. A _w_ függvény a Find utasítást használja, s ezt ráeresztjük az input minden sorára. Ha az adott sorban nem található a keresetett karakter - ami igen általános -, akkor az utolsó karakter utáni pozíciót kapjuk vissza. Mivel biztosak lehetünk abban, hogy a keresett karakter valamelyik sorban csak megjelenik, így a visszakapott számok minimuma adja meg a keresett `x` pozíciót. Az `y` pizícióhoz pedig az kell, hogy a keresett minimum hol fordul elő, azaz a minimumra, és a számsorra alkalmazzuk az Equals-t, ami egy bitvektort generál, így a Where visszaadja azt a pozíciót, ahol az egyetlen egyes található.
+
+```kona
+f:{:[x=83;0;x=69;26;x-97]}
+i:0:"test12.txt"
+i:0:"input12.txt"
+a:f'' _ic i
+w:{s:x?'y; u:&/s; v:&u=s;(u,v)}
+ws:w[i;"S"]; we:w[i;"E"]
+```
+
+Bevezetünk egy konstanst _m_ névvel, ami egy nagy számot jelöl -  olyan nagyot melyet a lépések számozása nem érhet el - így ezzel tudjuk jelölni, hogy hol nem jártunk még.
+Az _a_ méreteit (Shape) követve létrehozunk egy hasonló _d_ mátrixot, kezdetben ezzel a konstanssal feltöltve, majd megváltoztatjuk az `S` helyén, a kiindulópontban egy egyest szerepeltetünk.
+
+```kona
+m:1000
+d:(^a)#m
+d[ws[0];ws@1]:1
+```
+
+A feladatnak megfelelően akkor tudunk egy szomszédos mezőre lépni, ha az maximum egy értékkel van magasabban. Összpontosítjuk a figyelmünket egy irányra, modjuk délre.
+Minden mezőt az "alatta"/tőle délre lévővel kell összehasonlítani. Ehhez toljuk el az egész mátrixot eggyel feljebb: azaz töröljük az első sorát (Drop), s hogy a méretekkel ne legyen probléma,
+majd alul egészítsük ki egy konstansokból álló sorral! Ez utóbbihoz szükség van a mátrix szélességére, azaz egy-egy sorának hosszára. Ezt a méretét (Shape) jelző számpár
+második tagja adja meg, azaz itt is eldobhatjuk az elsőt, s a Take segítségével alakíthatunk ki a konstansunkból egy vektort, ám ne feletkezzünk meg az Enlist-ről,
+mellyel a vektor mátrixszá minősül át, és már illeszhető (Join) az előbbi csonkhoz. Ebből az eltolt mátrixból kivonva az eredetit megkapjuk az egymás alatt szereplő mezők távolságát,
+s ott lehet továbblépni, ahol maximum 1 ez a távolság, magyarul kisebb, mint 2. Ez az összehasonlítás egy bitmátrixot eredményez.
+
+Annak érdekében, hogy ezt a műveletsort ne kelljen megismételni a fennmaradó három irányra a programkódban, ezt a bitmátrix generálást az _n_ függvényben eltároltuk, és ezt alkalmazzuk az eredeti feladatunk _a_ mátrixának különféle tükrözéseire, melyek végül kiadják a négy irányt. Mivel ezeket a bitmátrixokat újra és újra felhasználjuk, elmentjük négy változóba:
+
+```kona
+n:{s:2>((1 _ x), ,(1 _ ^x)#m) - x}
+ad:n[a]; au:n[|a]; ar:n[+a]; al:n[|+a]
+```
+
+Ahol egyes bitek vannak az _ad_ mátrixban - mely a dél felé haladási lehetőségeket tárolja -,  ott a _d_ mátrixban feljegyzett lépésszámnál az alatta lévő mezőben feljegyzésre kerülő eggyel nagyobb lesz - feltéve, ha oda máshonnan nem jutottunk még el. Ha adott mezőből továbbléphetnénk, de a _d_ megfelelő mezője nagy számot tartalmaz, akkor felesleges figyelembe venni. Ha pedig valahonnan nem lehet továbblépni - az _ad_ ott nullást tartalmaz, akkor az a nagy számmal tudjuk jelezni.
+
+A _g_ függvény a következőképpen működik: megkapja az _ad_ és _d_ mátrixokat, veszi ezeknek a pontonkénti szorzatát - tehát ahol az _ad_-ban 1 van, ott _d_ értéke megmarad, ahol pedig _0_, ott nullázzuk, majd _ad_ negáltjának szorzatát _d_-vel amit hozzá is adunk az előbbi szorzathoz, azaz a korábban kapott nullák helyett már nagy számok szerepelnek. Az így kapott mátrix utolsó sorát eldobjuk - pontosabban vesszük az előtte lévő sorokat, s hogy letoljuk ezt a csonkot, még kiegészítjük egy első sorral. Annak érdekében, hogy a léptetés megtörténjen, a csonk elemeit eggyel növeljük az összeillesztés előtt.
+
+```kona
+g:{(,(1 _ ^y)#m),1+((*^y)-1)#((x*y)+(m*~x))}
+```
+
+Ezzel már tudjuk kezelni a délre történő lépéseket. De ha a _d_ mátrixot tükrözzük ide-oda, akkor a többi irányyal is elboldogulunk. Persze az eredményt illik visszaforgatni. Végül tekintjük a négy irányban megtehető lépéseket, valamint a kiinduló állapotot, és tekintjük ezek minimumát. Ennek mi az értelme? A _d_ az adott pontba eljutás minimálás lépésszámát adja meg. Oda-vissza lépéssel a lépésszám már nagyobb lenne, de a minimum miatt nem írjuk felül. Ha viszont még felfedezetlen területre jutunk, az ott szereplő nagy számot egy kisebbre cseréljük le. Ha valahova több irányból is el lehet jutni, a versenyhelyzet miatt mindig a legkisebb szám fog bekerülni.
+
+```kona
+h:{gd:g[ad;x]; gu:|g[au;|x]; gr:+g[ar;+x]; gl:+|g[al;|+x]; x&gd&gu&gl&gr}
+```
+
+Korábban már használtuk a `xf/y` és `xf\y` szerkezeteket, ennek van egyargumentumú párja is. Mivel az _a_ mátrixból generált bitmátixok nem változnak, a _h_ függvénynek csak egy argumentuma van, a _d_ mátrix; s egy hasonló, csak egy lépéssel kiegészített mátrixot ad vissza, így arra megint alkalmazható a _h_ függvény, s ez akkor áll meg, ha újra ugyanazt az eredményt kapjuk vissza.
+Ha már leállt a folyamat, akkor csak ki kell olvasni az `E` betű helyén álló számot, s mivel egytől indult a számozás, ebből egyet ki kell vonni:
+
+```kona
+z:h/d
+z[*we;we@1]-1
+```
+
+A feladat második felében azt a pozíciót kell megkeresni, amelyhez `a` tartozik, és melyből a legkevesebb lépéssel érhető el `E`. Persze le lehetne futtatni az előbbi megoldást minden egyes olyan pozícióból, melyhez `a` tartozik, de az elég munkás lenne.
+Inkább fordítsuk meg a helyzetet, és nézzük meg, hogy az `E`-ből hány lépésből lehet elérni az egyes pozíciókat. Mihez kell ezen változtani. Természetesen más lesz a kezdőpont, nem az _ws_-t hanem a _we_-t kell használni a _d_ módosításához. Az _n_ függvény szabta meg, hogy mikor lehet továbblépni. Ott a feltétel az volt, hogy az eltérés kisebb mint kettő. Ha megfordítjuk a keresés irányát, akkor fordítva végezzük el a kivonást, így módosított függvényben nagyobb mint minusz kettő szerepel helyette. A _z_-be most is begyűjtjük az összes számot. Viszont ezek közül csak az érdekes, melyhez `a` tartozik.
+
+A kódolásban ez a `0` értéket jelenti, tehát az a kérdés, hogy az _a_ vektorban hol szerepel nulla. Ez újra bitmátrixot ad, ezzel beszorozva a _z_ mátrixot, már majdnem kész is vagyunk. Sajnos vannak olyan pozíciók, melyek a szabályok szerint nem elérhetők, közöttük olyan is, melyhez `a` tartozik, itt az _m_ érték található, illetve ott vannak a nullák. A Range segítségével felsorolhatjuk az egyedi értékeket - melyeket elmentünk az _y_ változóba -, de ehhez a mátrixból vektort kell csinálni, amit a Join-Over segítségével érhetünk el. Rendezzük sorba a számokat a megszokott módon, s a nullát követő számot kellene visszaadni, pontosabban ennél eggyel kisebbet, mert továbbra is eggyel indult a számozás.
+
+```kona
+d[we[0];we@1]:1
+n:{s:-2<((1 _ x), ,(1 _ ^x)#m) - x}
+y:?,/(a=0)*z
+-1+y[<y]@1
+```
 
 ## 13. Distress Signal
 
